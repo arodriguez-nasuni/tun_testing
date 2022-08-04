@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+
 	// "net"
 	"log"
 	"os"
@@ -11,10 +12,9 @@ import (
 	"time"
 
 	color "github.com/fatih/color"
+	parse "github.com/ilyaigpetrov/parse-tcp-go"
 	"github.com/songgao/water"
 	"golang.org/x/net/ipv4"
-	parse "github.com/ilyaigpetrov/parse-tcp-go"
-
 )
 
 var (
@@ -34,49 +34,48 @@ const (
 
 var (
 	remoteIp      = ""
-	localIp 	  = ""
+	localIp       = ""
 	tunnelIpCount = 10
 	os_type       = 0
 )
 
-func setupTunnel(tunName, ip string) error {
+func setupTunnel(tunName, remoteIp, localIp string) error {
 	if os_type == OS_MAC {
-		return runMacSetup(tunName, ip)
+		return runMacSetup(tunName, remoteIp, localIp)
 	} else if os_type == OS_LINUX {
-		return runLinuxSetup(tunName, ip)
+		return runLinuxSetup(tunName, localIp)
 	} else {
 		return errors.New("Unimplemented for this OS")
 	}
 }
 
 func runBin(bin string, args ...string) {
-    cmd := exec.Command(bin, args...)
-    cmd.Stderr = os.Stderr
-    cmd.Stdout = os.Stdout
-    cmd.Stdin = os.Stdin
-    fatalIf(cmd.Run())
+	cmd := exec.Command(bin, args...)
+	cmd.Stderr = os.Stderr
+	cmd.Stdout = os.Stdout
+	cmd.Stdin = os.Stdin
+	fatalIf(cmd.Run())
 }
 
 func fatalIf(err error) {
-    if err != nil {
-        log.Fatal(err)
-    }
+	if err != nil {
+		log.Fatal(err)
+	}
 }
 
-func runMacSetup(tunName, ip string) error {
-	log.Fatalf("%s: UNIMPLEMENTED", errorMsg)
-	// runBin("ifconfig", tunName, remoteIp, localIp, "up")
+func runMacSetup(tunName, remoteIp, localIp string) error {
+	runBin("ifconfig", tunName, remoteIp, localIp, "up")
 	return nil
 }
 
 func runLinuxSetup(tunName, ip string) error {
-    runBin("/bin/ip", "link", "set", "dev", tunName, "mtu", MTU)
-    runBin("/bin/ip", "addr", "add", ip, "dev", tunName)
-    runBin("/bin/ip", "link", "set", "dev", tunName, "up")  
+	runBin("/bin/ip", "link", "set", "dev", tunName, "mtu", MTU)
+	runBin("/bin/ip", "addr", "add", ip, "dev", tunName)
+	runBin("/bin/ip", "link", "set", "dev", tunName, "up")
 	return nil
 }
 
-func createTunnel(ip string) (*water.Interface, error) {
+func createTunnel(remoteIp, localIp string) (*water.Interface, error) {
 	tunnelIpCount += 1
 	ifce, err := water.New(water.Config{
 		DeviceType: water.TUN,
@@ -84,8 +83,8 @@ func createTunnel(ip string) (*water.Interface, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = setupTunnel(ifce.Name(), ip)
-	log.Printf("New tunnel up as %s listening on %s\n\n", ifce.Name(), ip)
+	err = setupTunnel(ifce.Name(), remoteIp, localIp)
+	log.Printf("New tunnel up as %s listening on %s\n\n", ifce.Name(), localIp)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +108,6 @@ func main() {
 		log.Fatalf("%s: this OS is not supported", errorMsg)
 	}
 
-
 	if len(os.Args) < 3 {
 		fmt.Println("Syntax: ./tunneler local_addr dest_addr")
 		fmt.Println("Example ./listener 11.11.11.2/24 127.0.0.1")
@@ -129,18 +127,18 @@ func main() {
 
 	log.Printf("%s: Making tunnel from %s to %s\n", warningMsg, localIp, remoteIp)
 
-	src_iface, err := createTunnel(localIp)
+	src_iface, err := createTunnel(remoteIp, localIp)
 	if err != nil {
 		log.Fatalf("%s: %s", errorMsg, err)
 	}
 
 	go func() {
-		for  {
+		for {
 			packet := make([]byte, BUFFERSIZE)
 			for {
 				n, err := src_iface.Read(packet)
 				if err != nil {
-					log.Fatalf("Error: %s",err)
+					log.Fatalf("Error: %s", err)
 				}
 				header, _ := ipv4.ParseHeader(packet[:n])
 				if header.Protocol == 6 {
@@ -154,16 +152,19 @@ func main() {
 					// 	fmt.Println(err.Error())
 					// 	return
 					// }
+				} else {
+					log.Println("Received Non-TCP Packet:")
+					log.Printf("%v", packet[:n])
 				}
 			}
 		}
 	}()
 
 	func() {
-		for{
+		for {
 			time.Sleep(1 * time.Second)
 		}
-		
+
 	}()
 
 }

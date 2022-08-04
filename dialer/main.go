@@ -5,26 +5,9 @@ import (
 	"log"
 	"net"
 	"os"
-	"runtime"
-
-	color "github.com/fatih/color"
 )
 
 func main() {
-	running_os := runtime.GOOS
-	errorMsg := color.New(color.FgRed).SprintFunc()
-	successMsg := color.New(color.FgGreen).SprintFunc()
-	switch running_os {
-	case "windows":
-		log.Printf("%s: Windows", successMsg("RUNNING"))
-	case "darwin":
-		log.Printf("%s: MAC operating system", successMsg("RUNNING"))
-	case "linux":
-		log.Printf("%s: RUNNING: Linux", successMsg("RUNNING"))
-	default:
-		log.Fatalf("%s: this OS is not supported", errorMsg("ERROR"))
-	}
-
 	if len(os.Args) < 3 {
 		fmt.Println("Syntax: ./dialer ipaddr port [message]")
 		fmt.Println("Example ./dialer 172.20.20.1 445 the fox ran fast")
