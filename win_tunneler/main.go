@@ -1,14 +1,16 @@
 package main
 
-import (
-	"encoding/binary"
-	"io"
-	"net/netip"
-	"os"
+import "log"
 
-	"golang.zx2c4.com/wireguard/tun"
+const (
+	DEFAULT_MTU = 1500
 )
 
+func main() {
+	// Test is to create tunnel.
+	tun, err := CreateTUN("testertun", 1500)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-
-
+}
