@@ -9,6 +9,7 @@ package wintun
 
 import (
 	"fmt"
+	"log"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -24,6 +25,8 @@ type lazyDLL struct {
 }
 
 func (d *lazyDLL) Load() error {
+	log.Printf("Helloooo")
+	log.Printf("Name: %s", d.Name)
 	if atomic.LoadPointer((*unsafe.Pointer)(unsafe.Pointer(&d.module))) != nil {
 		return nil
 	}
@@ -37,7 +40,7 @@ func (d *lazyDLL) Load() error {
 		LOAD_LIBRARY_SEARCH_APPLICATION_DIR = 0x00000200
 		LOAD_LIBRARY_SEARCH_SYSTEM32        = 0x00000800
 	)
-	module, err := windows.LoadLibraryEx(d.Name, 0, LOAD_LIBRARY_SEARCH_APPLICATION_DIR|LOAD_LIBRARY_SEARCH_SYSTEM32)
+	module, err := (windows.LoadLibraryEx(d.Name, 0, LOAD_LIBRARY_SEARCH_APPLICATION_DIR|LOAD_LIBRARY_SEARCH_SYSTEM32))   
 	if err != nil {
 		return fmt.Errorf("Unable to load library: %w", err)
 	}

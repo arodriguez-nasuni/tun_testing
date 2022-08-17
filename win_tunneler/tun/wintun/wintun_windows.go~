@@ -89,7 +89,7 @@ func (pool *Pool) OpenAdapter(ifname string) (wintun *Adapter, err error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Proc: %v", procWintunOpenAdapter.Addr())
+	log.Println("Before SYS call")
 	r0, _, e1 := syscall.Syscall(procWintunOpenAdapter.Addr(), 2, uintptr(unsafe.Pointer(pool)), uintptr(unsafe.Pointer(ifname16)), 0)
 	if r0 == 0 {
 		err = e1
