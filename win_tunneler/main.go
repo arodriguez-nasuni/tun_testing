@@ -1,6 +1,9 @@
 package main
 
-import "log"
+import (
+	"log"
+	"win_tunneler/tun"
+)
 
 const (
 	DEFAULT_MTU = 1500
